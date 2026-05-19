@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  useState,
+  useEffect,
+  useRef,
+} from "react";
+
+import {
+  motion,
+  AnimatePresence,
+} from "framer-motion";
+
 import {
   AlertTriangle,
   Bot,
@@ -11,44 +20,53 @@ import {
   Radar,
   BellRing,
   Users,
-  Building2,
-  Heart,
-  ChevronRight,
-  Phone,
-  Globe,
   CheckCircle,
   Clock,
   Navigation,
-  Flame,
-  Shield,
-  Car,
+  ShieldCheck,
   Activity,
   CarFront,
-  UserCheck,
-  Send,
-  Building,
-  Radio,
-  ShieldCheck,
   Mic,
   Volume2,
+  StopCircle,
+  AlertCircle,
   X,
 } from "lucide-react";
 
 export default function Home() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [alertSent, setAlertSent] = useState(false);
-  const [emergencyType, setEmergencyType] = useState("Accident");
-
-  const [countdown, setCountdown] = useState(10);
-  const [isAccidentModalOpen, setIsAccidentModalOpen] =
+  const [isModalOpen, setIsModalOpen] =
     useState(false);
 
-  const [liveTime, setLiveTime] = useState("");
-  const [isListening, setIsListening] = useState(false);
+  const [alertSent, setAlertSent] =
+    useState(false);
+
+  const [emergencyType, setEmergencyType] =
+    useState("Accident");
+
+  const [countdown, setCountdown] =
+    useState(10);
+
+  const [
+    isAccidentModalOpen,
+    setIsAccidentModalOpen,
+  ] = useState(false);
+
+  const [liveTime, setLiveTime] =
+    useState("");
+
+  const [isListening, setIsListening] =
+    useState(false);
+
   const [detectedCommand, setDetectedCommand] =
     useState("");
 
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [emergencyActive, setEmergencyActive] =
+    useState(false);
+
+  const alarmRef =
+    useRef<HTMLAudioElement | null>(
+      null
+    );
 
   const coordinates = {
     lat: "18.5204",
@@ -65,6 +83,25 @@ export default function Home() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // ALARM
+  useEffect(() => {
+    if (
+      emergencyActive &&
+      alarmRef.current
+    ) {
+      alarmRef.current.play();
+    }
+
+    if (
+      !emergencyActive &&
+      alarmRef.current
+    ) {
+      alarmRef.current.pause();
+
+      alarmRef.current.currentTime = 0;
+    }
+  }, [emergencyActive]);
 
   // ACCIDENT TIMER
   useEffect(() => {
@@ -84,20 +121,23 @@ export default function Home() {
       isAccidentModalOpen
     ) {
       setIsAccidentModalOpen(false);
+
       setIsModalOpen(true);
+
       setAlertSent(true);
+
+      setEmergencyActive(true);
     }
   }, [
     countdown,
     isAccidentModalOpen,
   ]);
 
-  // VOICE COMMAND
-  const startListening = () => {
+  // VOICE ASSISTANT
+  const startVoiceAssistant = () => {
     setIsListening(true);
-    setDetectedCommand("");
 
-    timeoutRef.current = setTimeout(() => {
+    setTimeout(() => {
       setIsListening(false);
 
       const commands = [
@@ -119,7 +159,10 @@ export default function Home() {
 
       setTimeout(() => {
         setIsModalOpen(true);
+
         setAlertSent(true);
+
+        setEmergencyActive(true);
       }, 1000);
     }, 3000);
   };
@@ -128,45 +171,71 @@ export default function Home() {
     {
       icon: BellRing,
       title: "Smart SOS Alerts",
-      desc: "AI emergency alerts in real-time.",
+      desc: "Instant emergency alerts.",
     },
+
     {
       icon: Bot,
       title: "AI Assistant",
-      desc: "Instant emergency guidance.",
+      desc: "AI emergency guidance.",
     },
+
     {
       icon: MapPin,
       title: "Live Tracking",
-      desc: "Share your location instantly.",
+      desc: "Track emergencies live.",
     },
+
     {
       icon: Hospital,
       title: "Nearby Hospitals",
-      desc: "Locate nearest hospitals.",
+      desc: "Locate nearby hospitals.",
     },
+
     {
       icon: LayoutDashboard,
       title: "Emergency Dashboard",
-      desc: "Monitor incidents live.",
+      desc: "Monitor emergency activity.",
     },
+
     {
       icon: Radar,
       title: "Accident Detection",
-      desc: "AI-powered crash detection.",
+      desc: "AI crash detection system.",
     },
   ];
 
   return (
-    <main className="min-h-screen bg-black text-white overflow-x-hidden">
-      {/* Background */}
+    <main className="min-h-screen bg-black text-white overflow-x-hidden relative">
+      {/* AUDIO */}
+      <audio
+        ref={alarmRef}
+        loop
+        src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"
+      />
+
+      {/* BACKGROUND */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-black to-black"></div>
+
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(239,68,68,0.15),transparent_60%)]"></div>
 
         <div className="absolute top-20 left-20 w-72 h-72 bg-red-500/10 rounded-full blur-3xl animate-pulse"></div>
 
         <div className="absolute bottom-20 right-20 w-96 h-96 bg-red-700/10 rounded-full blur-3xl animate-pulse"></div>
       </div>
+
+      {/* EMERGENCY OVERLAY */}
+      <AnimatePresence>
+        {emergencyActive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.2 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-red-600 z-40 pointer-events-none animate-pulse"
+          />
+        )}
+      </AnimatePresence>
 
       {/* NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-xl border-b border-white/10">
@@ -178,6 +247,7 @@ export default function Home() {
           <button
             onClick={() => {
               setAlertSent(false);
+
               setIsModalOpen(true);
             }}
             className="bg-red-600 hover:bg-red-700 px-5 py-2 rounded-full font-semibold shadow-lg shadow-red-500/40"
@@ -206,10 +276,10 @@ export default function Home() {
         </motion.h1>
 
         <p className="mt-6 text-gray-400 max-w-2xl mx-auto text-lg">
-          AI-powered emergency response
-          with SOS alerts, accident
-          detection and voice emergency
-          commands.
+          AI-powered emergency
+          response with SOS alerts,
+          accident detection, live
+          tracking and voice commands.
         </p>
 
         {/* SOS BUTTON */}
@@ -218,6 +288,7 @@ export default function Home() {
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             setAlertSent(false);
+
             setIsModalOpen(true);
           }}
           className="mt-10 px-12 py-6 bg-red-600 rounded-2xl text-2xl font-bold shadow-[0_0_40px_rgba(239,68,68,0.7)]"
@@ -231,7 +302,10 @@ export default function Home() {
           whileTap={{ scale: 0.95 }}
           onClick={() => {
             setCountdown(10);
-            setIsAccidentModalOpen(true);
+
+            setIsAccidentModalOpen(
+              true
+            );
           }}
           className="mt-6 block mx-auto px-8 py-4 bg-black border border-red-500 text-red-400 rounded-2xl font-semibold"
         >
@@ -266,12 +340,14 @@ export default function Home() {
 
                   <div className="relative">
                     <div className="w-3 h-3 bg-red-500 rounded-full animate-ping absolute"></div>
+
                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                   </div>
                 </div>
 
                 <p className="text-red-400 text-xl font-mono">
-                  {coordinates.lat},{" "}
+                  {coordinates.lat},
+                  {" "}
                   {coordinates.lng}
                 </p>
 
@@ -314,7 +390,7 @@ export default function Home() {
             <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
               <h3 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                 <Activity className="text-red-500" />
-                Emergency Activity Feed
+                Emergency Activity
               </h3>
 
               <div className="space-y-4">
@@ -353,11 +429,10 @@ export default function Home() {
             using voice commands.
           </p>
 
-          {/* MIC */}
           <motion.button
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.95 }}
-            onClick={startListening}
+            onClick={startVoiceAssistant}
             className="relative w-32 h-32 rounded-full bg-red-600 flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(239,68,68,0.7)]"
           >
             <Mic size={50} />
@@ -397,12 +472,6 @@ export default function Home() {
               <p className="text-2xl font-bold">
                 "{detectedCommand}"
               </p>
-
-              <p className="text-gray-400 mt-4">
-                AI detected emergency
-                voice command and alerted
-                nearby responders.
-              </p>
             </motion.div>
           )}
         </div>
@@ -417,7 +486,8 @@ export default function Home() {
             </h2>
 
             <p className="text-gray-400">
-              Advanced AI emergency tools
+              Advanced AI emergency
+              tools
             </p>
           </div>
 
@@ -454,21 +524,98 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-white/10 py-10 text-center text-gray-500 relative z-10">
-        <p>
-          © 2026 ResQAI — AI Emergency
-          Response Platform
-        </p>
-      </footer>
+      {/* ALERT CARD */}
+      <AnimatePresence>
+        {emergencyActive && (
+          <motion.div
+            initial={{
+              y: -100,
+              opacity: 0,
+            }}
+            animate={{
+              y: 0,
+              opacity: 1,
+            }}
+            exit={{
+              y: -100,
+              opacity: 0,
+            }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4"
+          >
+            <div className="bg-black/80 border-2 border-red-500 rounded-2xl p-6 backdrop-blur-xl shadow-2xl shadow-red-500/40">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="text-red-500 animate-pulse" />
+
+                  <h3 className="text-xl font-bold">
+                    Emergency Alert
+                    Active
+                  </h3>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setEmergencyActive(
+                      false
+                    );
+
+                    if (
+                      alarmRef.current
+                    ) {
+                      alarmRef.current.pause();
+
+                      alarmRef.current.currentTime = 0;
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl flex items-center gap-2"
+                >
+                  <StopCircle size={18} />
+                  STOP
+                </button>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="text-green-400" />
+                  SMS sent to emergency
+                  contacts
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="text-green-400" />
+                  Nearby hospital
+                  notified
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="text-green-400" />
+                  Police control room
+                  alerted
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="text-green-400" />
+                  Live location shared
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* SOS MODAL */}
       <AnimatePresence>
         {isModalOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
             className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4"
           >
             <motion.div
@@ -516,7 +663,8 @@ export default function Home() {
                 </div>
 
                 <p className="text-sm text-gray-300">
-                  {coordinates.lat},{" "}
+                  {coordinates.lat},
+                  {" "}
                   {coordinates.lng}
                 </p>
               </div>
@@ -538,10 +686,13 @@ export default function Home() {
                   <option>
                     Accident
                   </option>
+
                   <option>
                     Medical
                   </option>
+
                   <option>Fire</option>
+
                   <option>
                     Women Safety
                   </option>
@@ -558,9 +709,13 @@ export default function Home() {
 
               <div className="flex gap-4">
                 <button
-                  onClick={() =>
-                    setAlertSent(true)
-                  }
+                  onClick={() => {
+                    setAlertSent(true);
+
+                    setEmergencyActive(
+                      true
+                    );
+                  }}
                   className="flex-1 bg-red-600 hover:bg-red-700 py-3 rounded-xl font-semibold"
                 >
                   Send Alert
@@ -584,9 +739,15 @@ export default function Home() {
       <AnimatePresence>
         {isAccidentModalOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
             className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
           >
             <motion.div
@@ -603,7 +764,10 @@ export default function Home() {
             >
               <div className="text-center">
                 <div className="w-24 h-24 mx-auto rounded-full bg-red-500/20 flex items-center justify-center mb-6 animate-pulse">
-                  <CarFront className="text-red-500" size={40} />
+                  <CarFront
+                    className="text-red-500"
+                    size={40}
+                  />
                 </div>
 
                 <h2 className="text-2xl font-bold mb-2">
@@ -640,10 +804,15 @@ export default function Home() {
                       setIsModalOpen(true);
 
                       setAlertSent(true);
+
+                      setEmergencyActive(
+                        true
+                      );
                     }}
                     className="bg-red-600 hover:bg-red-700 py-3 rounded-xl font-semibold"
                   >
-                    Send Emergency Alert
+                    Send Emergency
+                    Alert
                   </button>
                 </div>
               </div>
